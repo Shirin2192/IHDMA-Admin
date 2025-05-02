@@ -148,6 +148,7 @@
         Scripts
     ***********************************-->
     <?php include('common/js_files.php');?>
+    <script src="<?= base_url()?>assets/view_js/enquiry.js"></script>
 
 </body>
 

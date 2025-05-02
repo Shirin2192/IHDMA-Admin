@@ -14707,3 +14707,21 @@ html[dir="rtl"] [direction="rtl"][data-sidebar-style="compact"]:not([data-layout
   background: #208b32;
   color: #ffffff;
 }
+.error-text {
+  font-size: 12px;
+  margin-top: 3px;
+  display: block;
+}
+.error-text {
+  transition: opacity 0.5s ease-out;
+  opacity: 1;
+}
+
+.error-text.hidden {
+  opacity: 0;
+}
+.form-control {
+  height: 40px; /* or any other height */
+}
+
+
