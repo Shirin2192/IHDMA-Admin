@@ -19,8 +19,8 @@ function generateid() {
 function decy_ency($action, $string) {
     $output = false;
     $encrypt_method = "AES-256-CBC";
-    $secret_key = 'nia_natura_inventory_management key';
-    $secret_iv = 'nia_natura_inventory_management iv';
+    $secret_key = 'IHDMA key';
+    $secret_iv = 'IHDMA iv';
     $key = hash('sha256', $secret_key);
     $iv = substr(hash('sha256', $secret_iv), 0, 16);
     if ($action == 'encrypt') {
@@ -89,51 +89,3 @@ function validateToken(){
         $CI->load->model('Admin_model');
         return $CI->Admin_model->check_permission($module_name, $action);
     }
-   
-
-    // Based on the screenshot showing the actual file location
-require_once(FCPATH . 'vendor/phpmailer/phpmailer/PHPMailer.php');
-require_once(FCPATH . 'vendor/phpmailer/phpmailer/Exception.php');
-require_once(FCPATH . 'vendor/phpmailer/phpmailer/SMTP.php');
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
-use PHPMailer\PHPMailer\Exception;
-/**
- * Send inventory email using PHPMailer
- * 
- * @param string $to_email Recipient email address
- * @param string $subject Email subject
- * @param string $message Email body message (HTML)
- * @param string $from_name Sender name
- * @return bool True if email was sent successfully, false otherwise
- */
-function send_inventory_email($to_email, $subject, $message, $from_name = 'Nia Natura Inventory System') {
-    $CI =& get_instance();
-    
-    // Create a new PHPMailer instance
-    $mail = new PHPMailer(true);
-    try {
-        // SMTP settings
-        $mail->isSMTP();
-        $mail->Host       = 'eternal.herosite.pro';  // Your SMTP host
-        $mail->SMTPAuth   = true;
-        $mail->Username   = 'connect@sda.in.net';    // Your SMTP username
-        $mail->Password   = 'c_bo*bm#)4g*';          // Your SMTP password
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = 587;
-        // Sender and recipient
-        $mail->setFrom('connect@sda.in.net', $from_name);  // Sender email and name
-        $mail->addAddress($to_email);  // Recipient email
-        // Content settings
-        $mail->isHTML(true);  // Set email format to HTML
-        $mail->Subject = $subject;
-        $mail->Body    = $message;
-        // Send the email
-        $mail->send();
-        return true;  // Return true if email is sent successfully
-    } catch (Exception $e) {
-        // Log error if email fails to send
-        log_message('error', "Mailer Error: " . $mail->ErrorInfo);
-        return false;  // Return false if an error occurs
-    }
-}
