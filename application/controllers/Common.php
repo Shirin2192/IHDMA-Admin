@@ -24,24 +24,33 @@ class Common extends CI_Controller {
 		$mobile = $this->input->post('mobile');
 		$membership_type = $this->input->post('membership_type');
 
-		// Validation Rules
-		// $this->form_validation->set_rules('name', 'Name', 'required|trim');
-		// $this->form_validation->set_rules('email', 'Email', 'required|trim|valid_email|is_unique[tbl_users.email]');
-		// $this->form_validation->set_rules('password', 'Password', 'required|min_length[6]');
-		// $this->form_validation->set_rules('mobile', 'Mobile', 'required');
-		// //$this->form_validation->set_rules('membership_type', 'Membership Type', 'in_list[nursing,doctor,corporate,none]');
+		$this->form_validation->set_rules('name', 'Name', 'required|trim');
+		$this->form_validation->set_rules('email', 'Email', 'required|trim|valid_email|is_unique[tbl_users.email]');
+		$this->form_validation->set_rules('password', 'Password', 'required|min_length[6]');
+		$this->form_validation->set_rules('mobile', 'Mobile', 'required');
+		//$this->form_validation->set_rules('membership_type', 'Membership Type', 'in_list[nursing,doctor,corporate,none]');
 
-		// if ($this->form_validation->run() == FALSE) {
-		// 	echo json_encode([
-		// 		'status' => 'error',
-		// 		'name' => form_error('name'),
-		// 		'email' => form_error('email'),
-		// 		'password' => form_error('password'),
-		// 		'mobile' => form_error('mobile'),
-		// 		//'membership_type' => form_error('membership_type')
-		// 	]);
-		// 	return;
-		// }
+		if ($this->form_validation->run() == FALSE) {
+			echo json_encode([
+				'status' => 'error',
+				'name' => form_error('name'),
+				'email' => form_error('email'),
+				'password' => form_error('password'),
+				'mobile' => form_error('mobile'),
+			]);
+			return;
+		}
+		$exist_membership = $this->model->selectWhereData('tbl_users', ['email' => $email]);
+		if ($exist_membership) {
+			echo json_encode(["status" => "error", "message" => "Email already exists."]);
+			return;
+		}
+		$exist_mobile = $this->model->selectWhereData('tbl_users', ['mobile' => $mobile]);
+		if ($exist_mobile) {
+			echo json_encode(["status" => "error", "message" => "Mobile number already exists."]);
+			return;
+		}
+
 		$data = [
 			'name' => $name,
 			'email' => $email,

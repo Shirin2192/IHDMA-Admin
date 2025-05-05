@@ -49,23 +49,13 @@ $('#memberDataTable').on('click', '.view-btn', function () {
         success: function(response) {
             if (response.status === 'success') {
                 // If the response is successful, populate the modal with the blog data
-                const blogData = response.data;
-                $('#view_title').text(blogData.title); // Set the title
-                $('#view_slug').text(blogData.slug); // Set the slug
-                $('#view_content').text(blogData.content); // Set the content
-
-                // Ensure the image URL is correct
-                if (blogData.featured_image) {
-                    $('#view_featured_image').attr('src', frontend + 'uploads/blogs/' + blogData.featured_image);
-                } else {
-                    // Fallback image if no featured image is found
-                    $('#view_featured_image').attr('src', '/path/to/default-image.jpg');
-                }
-
-                $('#view_status').text(blogData.status); // Set the status
-
+                const memberData = response.data;
+                $('#view_name').text(memberData.name); 
+                $('#view_email').text(memberData.email); 
+                $('#view_contact_no').text(memberData.mobile); 
+                $('#view_membership_type').text(memberData.membership_type); 
                 // Show the modal with the blog details
-                $('#viewBlogModal').modal('show');
+                $('#viewMemberModal').modal('show');
             } else {
                 // Handle the error if the status is not success
                 alert('Failed to load blog details.');
@@ -95,22 +85,13 @@ $.ajax({
     success: function(response) {
         if (response.status === 'success') {
             // If the response is successful, populate the modal with the blog data
-            const blogData = response.data;
+            const memberData = response.data;
 
             // Populate modal fields
-            $('#edit_blog_id').val(blogData.id);
-            $('#edit_title').val(blogData.title);
-            $('#edit_slug').val(blogData.slug);
-            $('#edit_content').val(blogData.content);
-
-            // Check if the blog has a featured image and set it
-            if (blogData.featured_image) {
-                $('#current_featured_image').attr('src', frontend + 'uploads/blogs/' + blogData.featured_image).show();
-            } else {
-                $('#current_featured_image').hide();  // Hide the image section if there's no image
-            }
-
-            $('#edit_status').val(blogData.status);  // Set the status dropdown
+            $('#edit_name').text(memberData.name); 
+            $('#edit_email').text(memberData.email); 
+            $('#edit_contact_no').text(memberData.mobile); 
+            $('#edit_membership_type').text(memberData.membership_type); 
 
             // Show the modal with the blog details
             $('#editMemberModal').modal('show');

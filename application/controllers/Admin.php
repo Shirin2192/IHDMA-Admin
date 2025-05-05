@@ -187,7 +187,6 @@ class Admin extends CI_Controller {
 	
 		echo json_encode($response);
 	}
-
 	public function delete_blog()
 	{
 		$id = $this->input->post('id');
@@ -250,6 +249,346 @@ class Admin extends CI_Controller {
 			redirect('common');
 		}else{
 			$this->load->view('admin/announcement');
+		}
+	}
+	public function membership_category()
+	{
+		$admin_session = $this->session->userdata('admin_session');
+		if (empty($admin_session)) {
+			redirect('common');
+		}else{
+			$this->load->view('admin/membership_category');
+		}
+	}
+	public function save_category() {
+		$this->load->library('form_validation');
+	
+		// Updated validation rules
+		$this->form_validation->set_rules('category_name', 'Category Name', 'required|trim|max_length[100]');
+		$this->form_validation->set_rules('description', 'Description', 'required|trim|max_length[1000]');
+	
+		if ($this->form_validation->run() == FALSE) {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Validation failed.',
+				'errors' => $this->form_validation->error_array()
+			]);
+			return;
+		}
+	
+		// Sanitize input values
+		$category_name = trim($this->input->post('category_name'));
+		$description = trim($this->input->post('description'));
+	
+		// Check for existing category name (case-insensitive)
+		$existing_category = $this->model->selectWhereData(
+			'tbl_membership_categories',
+			['LOWER(category_name)' => strtolower($category_name)],
+			'*',
+			true
+		);	
+		if ($existing_category) {
+			echo json_encode([
+				'status' => 'error',
+				'errors' => [
+					'category_name' => 'Category name already exists.'
+				]
+			]);
+			return;
+		}
+		// Prepare data to insert
+		$data = [
+			'category_name' => $category_name,
+			'description' => $description
+		];
+	
+		// Insert data
+		$insert = $this->model->insertData('tbl_membership_categories', $data);
+	
+		if ($insert) {
+			echo json_encode([
+				'status' => 'success',
+				'message' => 'Category saved successfully.'
+			]);
+		} else {
+			log_message('error', 'Category insert failed: ' . json_encode($data));
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Failed to save category. Please try again.'
+			]);
+		}
+	}
+	
+	public function category_data_on_datatable(){
+		$response['data'] = $this->model->selectWhereData('tbl_membership_categories', array('is_delete' => '1'), '*', false,array('id'=>'desc'));
+		$response['status'] = 'success';
+		echo json_encode($response);
+	} 
+	public function category_data_on_id(){
+		$id = $this->input->post('id');
+		$response['data'] = $this->model->selectWhereData('tbl_membership_categories', array('id' => $id), '*', true);
+		$response['status'] = 'success';
+		echo json_encode($response);
+	}
+	public function update_category() {
+		$response = ['status' => 'error'];
+		$this->load->library('form_validation');
+	
+		// Validation rules
+		$this->form_validation->set_rules('edit_category_name', 'Category Name', 'required|trim|max_length[100]');
+		$this->form_validation->set_rules('edit_description', 'Description', 'required|trim|max_length[1000]');
+	
+		if ($this->form_validation->run() == FALSE) {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Validation failed.',
+				'errors' => $this->form_validation->error_array()
+			]);
+			return;
+		}
+	
+	
+		$id = $this->input->post('edit_category_id');
+		$category_name = trim($this->input->post('edit_category_name'));
+		$description = trim($this->input->post('edit_description'));
+	
+		// Check for duplicate name (excluding the current ID)
+		$existing_category = $this->model->selectWhereData(
+			'tbl_membership_categories',
+			['category_name' => $category_name, 'id !=' => $id],
+			'*',
+			true
+		);
+	
+		if ($existing_category) {
+			$response['errors'] = [
+				'edit_category_name' => 'Category name already exists.'
+			];
+			echo json_encode($response);
+			return;
+		}
+	
+		// Prepare update
+		$data = [
+			'category_name' => $category_name,
+			'description' => $description
+		];
+	
+		$updated = $this->model->updateData('tbl_membership_categories', $data, ['id' => $id]);
+	
+		if ($updated) {
+			$response['status'] = 'success';
+			$response['message'] = 'Category updated successfully.';
+		} else {
+			$response['message'] = 'No changes were made or update failed.';
+		}
+	
+		echo json_encode($response);
+	}
+	
+	public function delete_category()
+	{
+		$id = $this->input->post('id');
+		if (!$id) {
+			echo json_encode(['status' => 'error', 'message' => 'Invalid Blog ID.']);
+			return;
+		}
+		// Update blog status to "deleted" or "inactive"
+		$data = [
+			'is_delete' => '0', // Assuming 0 means deleted
+		];
+		$updated = $this->model->updateData('tbl_membership_categories', $data, ['id' => $id]);
+
+		if ($updated) {
+			echo json_encode(['status' => 'success', 'message' => 'Category deleted successfully.']);
+		} else {
+			echo json_encode(['status' => 'error', 'message' => 'Failed to delete category.']);
+		}
+	}
+	public function membership_types()
+	{
+		$admin_session = $this->session->userdata('admin_session');
+		if (empty($admin_session)) {
+			redirect('common');
+		}else{
+			$response['categories'] = $this->model->selectWhereData('tbl_membership_categories', array('is_delete' => '1'), '*', false,array('id'=>'desc'));
+			$response['currencies'] = $this->model->selectWhereData('tbl_currency', array(), '*', false,array('id'=>'desc'));
+			$this->load->view('admin/membership_types',$response);
+		}
+	}
+	public function save_membership_type() {
+		$this->load->library('form_validation');
+	
+		$this->form_validation->set_rules('category_name', 'Category', 'required');
+		$this->form_validation->set_rules('type_name', 'Type Name', 'required|trim|max_length[100]');
+		$this->form_validation->set_rules('currency', 'Currency', 'required|trim|max_length[10]');
+		$this->form_validation->set_rules('price', 'Price', 'required|numeric');
+		$this->form_validation->set_rules('short_description', 'Short Description', 'required|trim|max_length[255]');
+		$this->form_validation->set_rules('full_description', 'Full Description', 'required|trim');
+	
+		if ($this->form_validation->run() == FALSE) {
+			echo json_encode([
+				'status' => 'error',
+				'errors' => $this->form_validation->error_array()
+			]);
+			return;
+		}
+	
+		$category_id = $this->input->post('category_name');
+		$type_name = trim($this->input->post('type_name'));
+	
+		// Check for existing type under same category
+		$exists = $this->model->selectWhereData(
+			'tbl_membership_types',
+			['fk_category_id' => $category_id, 'LOWER(type_name)' => strtolower($type_name)],
+			'*',
+			true
+		);
+	
+		if ($exists) {
+			echo json_encode([
+				'status' => 'error',
+				'errors' => ['type_name' => 'This membership type already exists under the selected category.']
+			]);
+			return;
+		}
+	
+		$data = [
+			'fk_category_id' => $category_id,
+			'type_name' => $type_name,
+			'currency' => $this->input->post('currency'),
+			'price' => $this->input->post('price'),
+			'short_description' => $this->input->post('short_description'),
+			'full_description' => $this->input->post('full_description'),
+		];
+	
+		$insert = $this->model->insertData('tbl_membership_types', $data);
+	
+		if ($insert) {
+			echo json_encode([
+				'status' => 'success',
+				'message' => 'Membership type saved successfully.'
+			]);
+		} else {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Failed to save membership type. Please try again.'
+			]);
+		}
+	}
+	public function membership_type_data_on_datatable(){
+		$this->load->model('Admin_model');
+		$response['data'] = $this->Admin_model->membership_type_data_on_datatable();
+		$response['status'] = 'success';
+		echo json_encode($response);
+	} 
+	public function membership_type_data_on_id(){
+		$this->load->model('Admin_model');
+		$id = $this->input->post('id');
+		$response['data'] = $this->Admin_model->membership_type_data_on_id($id);
+		$response['status'] = 'success';
+		echo json_encode($response);
+	}
+	public function update_membership_type()
+	{
+		$this->load->library('form_validation');
+		$response = ['status' => false, 'errors' => [], 'message' => ''];
+
+		// Gather the posted data
+		$id = $this->input->post('edit_membership_type_id');
+		$category_id = $this->input->post('edit_category_name');
+		$type_name = trim($this->input->post('edit_type_name'));
+		$currency_id = $this->input->post('edit_currency');
+		$price = trim($this->input->post('edit_price'));
+		$short_desc = trim($this->input->post('edit_short_description'));
+		$full_desc = trim($this->input->post('edit_full_description'));
+
+		// === Form Validation ===
+		$this->form_validation->set_rules('edit_category_name', 'Category', 'required');
+		$this->form_validation->set_rules('edit_type_name', 'Type Name', 'required');
+		$this->form_validation->set_rules('edit_currency', 'Currency', 'required');
+		$this->form_validation->set_rules('edit_price', 'Price', 'required|numeric');
+		$this->form_validation->set_rules('edit_short_description', 'Short Description', 'required');
+		$this->form_validation->set_rules('edit_full_description', 'Full Description', 'required');
+
+		// Run the form validation
+		if ($this->form_validation->run() == FALSE) {
+			// Return validation errors if validation fails
+			$response['status'] = 'error'; // Explicitly setting this here
+			$response['errors'] = [
+				'edit_category_name' => form_error('edit_category_name'),
+				'edit_type_name' => form_error('edit_type_name'),
+				'edit_currency' => form_error('edit_currency'),
+				'edit_price' => form_error('edit_price'),
+				'edit_short_description' => form_error('edit_short_description'),
+				'edit_full_description' => form_error('edit_full_description'),
+			];
+		} else {
+			// === Duplicate Check ===
+			$duplicate = $this->model->selectWhereData(
+				'tbl_membership_types',
+				['fk_category_id' => $category_id, 'LOWER(type_name)' => strtolower($type_name), 'id !=' => $id],
+				'*',
+				true
+			);
+
+			// Handle duplicate case
+			if ($duplicate) {
+				$response['status'] = 'error';
+				$response['errors'] = ['edit_type_name' => 'This type name already exists for the selected category.'];
+			} else {
+				// === Perform Update ===
+				$data = [
+					'fk_category_id' => $category_id,
+					'type_name' => $type_name,
+					'fk_currency_id' => $currency_id,
+					'price' => $price,
+					'short_description' => $short_desc,
+					'full_description' => $full_desc,
+				];
+
+				// Update record in the database
+				$updateSuccess = $this->model->updateData('tbl_membership_types', $data, ['id' => $id]);
+
+				if ($updateSuccess) {
+					$response['status'] = 'success';
+					$response['message'] = 'Membership Type updated successfully.';
+				} else {
+					$response['status'] = 'error';
+					$response['message'] = 'Failed to update the Membership Type.';
+				}
+			}
+		}
+
+		// Return the response as JSON
+		echo json_encode($response);
+	}
+	public function delete_membership_type()
+	{
+		$id = $this->input->post('id');
+		if (!$id) {
+			echo json_encode(['status' => 'error', 'message' => 'Invalid Blog ID.']);
+			return;
+		}
+		// Update blog status to "deleted" or "inactive"
+		$data = [
+			'is_delete' => '0', // Assuming 0 means deleted
+		];
+		$updated = $this->model->updateData('tbl_membership_types', $data, ['id' => $id]);
+
+		if ($updated) {
+			echo json_encode(['status' => 'success', 'message' => 'Membership Type deleted successfully.']);
+		} else {
+			echo json_encode(['status' => 'error', 'message' => 'Failed to delete category.']);
+		}
+	}
+	public function team_member()
+	{
+		$admin_session = $this->session->userdata('admin_session');
+		if (empty($admin_session)) {
+			redirect('common');
+		}else{
+			$this->load->view('admin/team_member');
 		}
 	}
 }
