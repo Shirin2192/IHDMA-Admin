@@ -1,60 +1,67 @@
-$('#CategoryForm').on('submit', function (e) {
+$('#TeamMemberForm').on('submit', function (e) {
     e.preventDefault();
 
-    // Clear previous error messages
-    $('.error-text').text('');
+    const form = this;
+    const formData = new FormData(form);
 
-    var form = $('#CategoryForm')[0];
-    var formData = new FormData(form);
+    // Clear previous error messages
+    $('#TeamMemberForm small.text-danger').text('');
 
     $.ajax({
-        url: frontend + controllerName + "/save_category",
+        url: frontend + controllerName + '/add_team_member',
         type: 'POST',
         data: formData,
-        dataType: 'json',
-        processData: false,
         contentType: false,
+        processData: false,
+        dataType: 'json',
+        beforeSend: function () {
+            $('.button_submit').prop('disabled', true);
+        },
         success: function (response) {
+            $('.button_submit').prop('disabled', false);
+
             if (response.status === 'success') {
-                $('#TeamMemberTable').DataTable().ajax.reload(null, false); // Reload without resetting pagination
                 Swal.fire({
                     icon: 'success',
                     title: 'Success',
                     text: response.message,
-                    // showConfirmButton: true,
-                    timer: 2000, // Auto-close after 2 seconds (2000 ms)
-                    confirmButtonColor: '#3085d6',
-                    confirmButtonText: 'OK'
+                    timer: 2000,
+                    confirmButtonColor: '#3085d6'
                 });
-                $('#CategoryForm')[0].reset();
+                form.reset();
+                $('#TeamMemberTable').DataTable().ajax.reload(null, false);
             } else if (response.status === 'error') {
-                // Show validation errors under each input
                 if (response.errors) {
                     $.each(response.errors, function (key, val) {
-                        $('#' + key + '_error').text(val);
-                        
-                        // Hide the error message after 5 seconds
-                        setTimeout(function() {
-                            $('#' + key + '_error').text('');
+                        const errorElement = $('#' + key + '_error');
+                        errorElement.text(val);
+                
+                        // Auto-clear after 5 seconds (5000 ms)
+                        setTimeout(function () {
+                            errorElement.text('');
                         }, 5000);
                     });
-                }
-                // Optional upload error fallback
-                if (response.upload_error) {
-                    $('#featured_image_error').text(response.upload_error);
-
-                    // Hide the upload error message after 5 seconds
-                    setTimeout(function() {
-                        $('#featured_image_error').text('');
-                    }, 5000);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message || 'Something went wrong!'
+                    });
                 }
             }
         },
-        error: function () {
-            alert('An error occurred. Please try again.');
+        error: function (xhr) {
+            $('.button_submit').prop('disabled', false);
+            Swal.fire({
+                icon: 'error',
+                title: 'Server Error',
+                text: 'An unexpected error occurred.'
+            });
+            console.error(xhr.responseText);
         }
     });
 });
+
 $(document).ready(function () {
     if ($.fn.DataTable.isDataTable('#TeamMemberTable')) {
         $('#TeamMemberTable').DataTable().clear().destroy();
@@ -64,17 +71,32 @@ $(document).ready(function () {
         processing: true,
         serverSide: false,
         ajax: {
-            url: frontend + controllerName + '/category_data_on_datatable',
+            url: frontend + controllerName + '/team_member_data_on_datatable',
             type: 'POST',
-
         },
         columns: [
-            { data: 'id' },
-            { data: 'title' },
-            // remove or replace the invalid blogs column
-            { data: 'slug' },
-            { data: 'slug' },
-            { data: 'slug' },
+            {
+                data: null,
+                title: 'Sr. No.',
+                orderable: false,
+                searchable: false,
+                render: function (data, type, row, meta) {
+                    return meta.row + 1;  // Auto-increment serial number
+                }
+            },
+            { data: 'name',},
+            { data: 'designation', },
+            { data: 'description', },
+            {
+                data: 'photo',
+                render: function (data, type, row) {
+                    if (data) {
+                        return `<img src="${frontend}${data}" alt="Photo" height="50" style="border-radius: 5px;" />`;
+                    } else {
+                        return '<span class="text-muted">No image</span>';
+                    }
+                }
+            },        
             {
                 data: null,
                 orderable: false,
@@ -88,121 +110,115 @@ $(document).ready(function () {
                             <i class="icon-pencil menu-icon"></i>
                         </button>
                         <button class="btn btn-sm btn-danger delete-btn" title="Delete" data-id="${row.id}">
-                           <i class="icon-trash menu-icon"></i>
+                            <i class="icon-trash menu-icon"></i>
                         </button>
                     `;
                 }
             }
         ]
-    });
+    });   
 
     // View button handler
     $('#TeamMemberTable').on('click', '.view-btn', function () {
-        const id = $(this).data('id'); // Get the blog ID from the button's data-id attribute
+        const id = $(this).data('id'); // Get the team member ID
     
-        // Make the AJAX request to fetch blog details
+        // Make the AJAX request to fetch team member details
         $.ajax({
-            url: frontend + controllerName + '/category_data_on_id', // Corrected controller path
+            url: frontend + controllerName + '/team_member_data_on_id',
             type: 'POST',
-            data: {
-                id: id // Send the blog ID to fetch the details
-            },
+            data: { id: id },
             dataType: 'json',
             success: function(response) {
                 if (response.status === 'success') {
-                    // If the response is successful, populate the modal with the blog data
-                    const blogData = response.data;
-                    $('#view_title').text(blogData.title); // Set the title
-                    $('#view_slug').text(blogData.slug); // Set the slug
-                    $('#view_content').text(blogData.content); // Set the content
+                    const data = response.data;
     
-                    // Ensure the image URL is correct
-                    if (blogData.featured_image) {
-                        $('#view_featured_image').attr('src', frontend + 'uploads/blogs/' + blogData.featured_image);
+                    // Basic text fields
+                    $('#view_name').text(data.name);
+                    $('#view_designation').text(data.designation);
+                    $('#view_description').text(data.description);
+    
+                    // Social links
+                    $('#view_facebook_link').html(data.facebook_link ? `<a href="${data.facebook_link}" target="_blank">${data.facebook_link}</a>` : '');
+                    $('#view_linkedin_link').html(data.linkedin_link ? `<a href="${data.linkedin_link}" target="_blank">${data.linkedin_link}</a>` : '');
+                    $('#view_youtube_link').html(data.youtube_link ? `<a href="${data.youtube_link}" target="_blank">${data.youtube_link}</a>` : '');
+                    $('#view_twitter_link').html(data.twitter_link ? `<a href="${data.twitter_link}" target="_blank">${data.twitter_link}</a>` : '');
+    
+                    // Photo
+                    if (data.photo) {
+                        $('#view_photo').html(`<img src="${frontend}${data.photo}" class="img-fluid rounded shadow" alt="Photo" style="width:50%" />`);
+
                     } else {
-                        // Fallback image if no featured image is found
-                        $('#view_featured_image').attr('src', '/path/to/default-image.jpg');
+                        $('#view_photo').text('No photo available');
                     }
     
-                    $('#view_status').text(blogData.status); // Set the status
-    
-                    // Show the modal with the blog details
-                    $('#viewBlogModal').modal('show');
+                    // Show modal
+                    $('#viewMemberTypeModal').modal('show');
                 } else {
-                    // Handle the error if the status is not success
-                    alert('Failed to load blog details.');
+                    alert('Failed to load team member details.');
                 }
             },
             error: function(xhr, status, error) {
-                // Handle AJAX error
                 console.error('AJAX Error: ' + status + ' - ' + error);
-                alert('An error occurred while fetching the blog details.');
+                alert('An error occurred while fetching the team member details.');
             }
         });
     });
     
+    
 
    // Edit button handler
-$('#TeamMemberTable').on('click', '.edit-btn', function () {
-    const id = $(this).data('id'); // Get the blog ID from the button's data-id attribute
+   $('#TeamMemberTable').on('click', '.edit-btn', function () {
+    const id = $(this).data('id'); // Get the team member ID
 
-    // Make the AJAX request to fetch blog details
     $.ajax({
-        url: frontend + controllerName + '/category_data_on_id', // Corrected controller path
+        url: frontend + controllerName + '/team_member_data_on_id',
         type: 'POST',
-        data: {
-            id: id // Send the blog ID to fetch the details
-        },
+        data: { id: id },
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success') {
-                // If the response is successful, populate the modal with the blog data
-                const blogData = response.data;
+                const data = response.data;
 
-                // Populate modal fields
-                $('#edit_blog_id').val(blogData.id);
-                $('#edit_title').val(blogData.title);
-                $('#edit_slug').val(blogData.slug);
-                $('#edit_content').val(blogData.content);
+                // Populate form fields
+                $('#edit_member_id').val(data.id); // Hidden ID input
+                $('#edit_name').val(data.name);
+                $('#edit_designation').val(data.designation);
+                $('#edit_description').val(data.description);
+                $('#edit_facebook_link').val(data.facebook_link);
+                $('#edit_linkedin_link').val(data.linkedin_link);
+                $('#edit_youtube_link').val(data.youtube_link);
+                $('#edit_twitter_link').val(data.twitter_link);
 
-                // Check if the blog has a featured image and set it
-                if (blogData.featured_image) {
-                    $('#current_featured_image').attr('src', frontend + 'uploads/blogs/' + blogData.featured_image).show();
+                // Photo preview
+                if (data.photo) {
+                    $('#edit_current_photo').html(`<img src="${frontend}${data.photo}" class="img-fluid rounded shadow mt-2" alt="Photo" style="width: 100px;" />`);
                 } else {
-                    $('#current_featured_image').hide();  // Hide the image section if there's no image
+                    $('#edit_current_photo').html('<span class="text-muted">No photo uploaded</span>');
                 }
 
-                $('#edit_status').val(blogData.status);  // Set the status dropdown
-
-                // Show the modal with the blog details
-                $('#editBlogModal').modal('show');
+                // Show the edit modal
+                $('#editTeamMemberModal').modal('show');
             } else {
-                // Handle the error if the status is not success
-                alert('Failed to load blog details.');
+                alert('Failed to load team member details.');
             }
         },
         error: function(xhr, status, error) {
-            // Handle AJAX error
             console.error('AJAX Error: ' + status + ' - ' + error);
-            alert('An error occurred while fetching the blog details.');
+            alert('An error occurred while fetching the team member details.');
         }
     });
 });
-
-    
-
-    // Delete button handler (Soft Delete)
 // Delete button handler (Soft Delete)
 $('#TeamMemberTable').on('click', '.delete-btn', function () {
     const id = $(this).data('id'); // Get the blog ID from the button's data-id attribute
 
     // Show the delete confirmation modal
-    $('#deleteBlogModal').modal('show');
+    $('#deleteTeamMemberModal').modal('show');
 
     // Handle the confirm delete button click
     $('#confirmDeleteBtn').off('click').on('click', function () {
         $.ajax({
-            url: frontend + controllerName + '/delete_category', // Ensure correct controller path
+            url: frontend + controllerName + '/delete_team_member', // Ensure correct controller path
             type: 'POST',
             data: { id: id },
             dataType: 'json',
@@ -211,7 +227,7 @@ $('#TeamMemberTable').on('click', '.delete-btn', function () {
                     // Display success message using SweetAlert
                     Swal.fire({
                         icon: 'success',
-                        title: 'Blog Soft Deleted',
+                        title: 'Team Member Deleted',
                         text: response.message,
                         timer: 2000, // Auto-close after 2 seconds (2000 ms)
                         confirmButtonColor: '#3085d6',
@@ -222,16 +238,16 @@ $('#TeamMemberTable').on('click', '.delete-btn', function () {
                     table.ajax.reload(null, false);
                 } else {
                     // Display error message if the delete failed
-                    alert(response.message || 'Soft delete failed.');
+                    alert(response.message);
                 }
 
                 // Close the modal after the action is complete
-                $('#deleteBlogModal').modal('hide');
+                $('#deleteTeamMemberModal').modal('hide');
             },
             error: function () {
-                alert('Error while soft deleting the blog.');
+                alert('Error while soft deleting the Team Member.');
                 // Close the modal after the error
-                $('#deleteBlogModal').modal('hide');
+                $('#deleteTeamMemberModal').modal('hide');
             }
         });
     });
@@ -239,12 +255,12 @@ $('#TeamMemberTable').on('click', '.delete-btn', function () {
 
 
 });
-$('#editBlogForm').on('submit', function (e) {
+$('#editTeamMemberForm').on('submit', function (e) {
     e.preventDefault();
 
     let formData = new FormData(this); // Collect the form data, including the file
     $.ajax({
-        url: frontend + controllerName + '/update_category', // Adjust this URL to your controller method
+        url: frontend + controllerName + '/update_team_member', // Adjust this URL to your controller method
         type: 'POST',
         data: formData,
         contentType: false,
@@ -252,14 +268,12 @@ $('#editBlogForm').on('submit', function (e) {
         dataType: 'json',
         beforeSend: function () {
             // Clear previous errors
-            $('#editBlogForm small.text-danger').text('');
+            $('#editTeamMemberForm small.text-danger').text('');
         },
         success: function (response) {
             if (response.status === 'success') {
-                $('#editBlogModal').modal('hide');
-                $('#editBlogForm')[0].reset();
-                $('#current_featured_image').hide();
-                // Refresh the table if needed
+                $('#editTeamMemberModal').modal('hide');
+                $('#editTeamMemberForm')[0].reset();
                 $('#TeamMemberTable').DataTable().ajax.reload(null, false); // Reload without resetting pagination
                 Swal.fire({
                     icon: 'success',
@@ -272,14 +286,29 @@ $('#editBlogForm').on('submit', function (e) {
                 });
 
             } else if (response.status === 'error') {
-                // Display validation errors
+                // Show validation errors under each input
                 if (response.errors) {
-                    $.each(response.errors, function (key, value) {
-                        $('#edit_' + key + '_error').text(value);
+                    $.each(response.errors, function (key, val) {
+                        $('#' + key + '_error').text(val);
+                        
+                        // Hide the error message after 5 seconds
+                        setTimeout(function() {
+                            $('#' + key + '_error').text('');
+                        }, 5000);
                     });
-                } else {
-                    alert('Something went wrong. Please try again.');
                 }
+                // Optional upload error fallback
+                
+            }else{
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.message,
+                    timer: 2000, // Auto-close after 2 seconds (2000 ms)
+                    // showConfirmButton: true,
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                });
             }
         },
         error: function (xhr, status, error) {

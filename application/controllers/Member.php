@@ -1,6 +1,9 @@
 <?php
-ob_start(); // Start output buffering
-defined('BASEPATH') OR exit('No direct script access allowed');
+ob_start();
+defined('BASEPATH') or exit('No direct script access allowed');
+header("Access-Control-Allow-Origin: *"); // or use a specific domain instead of '*'
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
 class Member extends CI_Controller {
 	public function __construct()
@@ -147,6 +150,55 @@ class Member extends CI_Controller {
 			]);
 		}
 	}
+	public function get_user_profile(){
+		$id = $this->input->post('id');
+		$response['data'] = $this->model->selectWhereData('tbl_users', ['is_delete' => '1','id' => $id],'*',true);
+		$response['status'] = 'success';
+		$response['message'] = 'User profile fetched successfully.';
+		echo json_encode($response);
+	}
+	public function update_user_profile() {
+		$user_id = $this->input->post('user_id');
+		$name    = $this->input->post('name');
+		$email   = $this->input->post('email');
+		$mobile  = $this->input->post('mobile');
+	
+		// Validate input
+		$this->form_validation->set_rules('user_id', 'User ID', 'required|trim');
+		$this->form_validation->set_rules('name', 'Name', 'required|trim');
+		$this->form_validation->set_rules('email', 'Email', 'required|trim|valid_email');
+		$this->form_validation->set_rules('mobile', 'Mobile', 'required|trim|numeric');
+	
+		if ($this->form_validation->run() == FALSE) {
+			echo json_encode([
+				'status' => 'error',
+				'user_id_error' => form_error('user_id'),
+				'name_error' => form_error('name'),
+				'email_error' => form_error('email'),
+				'mobile_error' => form_error('mobile')
+			]);
+			return;
+		}
+	
+		// Update user profile
+		$updateData = [
+			'name'   => $name,
+			'email'  => $email,
+			'mobile' => $mobile
+		];
+	
+		if ($this->model->updateData('tbl_users', ['id' => $user_id], $updateData)) {
+			echo json_encode([
+				'status' => 'success',
+				'message' => 'Profile updated successfully.'
+			]);
+		} else {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Profile update failed.'
+			]);
+		}
+	}
 
 	public function get_membership_planes(){
 		$this->load->model('Member_model');
@@ -176,5 +228,32 @@ class Member extends CI_Controller {
 		$response['message'] = 'Team member fetched successfully.';
 		echo json_encode($response);
 	}
+	public function save_enquiry_data(){
+		$name         = $this->input->post('name');
+		$email        = $this->input->post('email');
+		$mobile       = $this->input->post('mobile');
+		$message      = $this->input->post('message');	
+		// Insert new enquiry
+		$insertData = [
+			'name'         => $name,
+			'email'        => $email,
+			'phone'       => $mobile,
+			'message'      => $message,		
+		];
 
+		$insert = $this->model->insertData('tbl_enquiries', $insertData);
+		if ($insert) {
+			echo json_encode([
+				'status' => 'success',
+				'message' => 'Enquiry submitted successfully.'
+			]);
+		}
+		else {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Enquiry submission failed.'
+			]);
+		}
+	}
+	
 }

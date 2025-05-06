@@ -9,7 +9,7 @@
     <!-- theme meta -->
     <meta name="theme-name" content="quixlab" />
 
-    <title>IHDMA - Export Member</title>
+    <title>IHDMA - Dashboard</title>
     <!-- Favicon icon -->
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon.png">
     <!-- Pignose Calender -->
@@ -72,27 +72,65 @@
                 <div class="col p-md-0">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="javascript:void(0)">Dashboard</a></li>
-                        <li class="breadcrumb-item active"><a href="javascript:void(0)">Export Enquiry List</a></li>
+                        <li class="breadcrumb-item active"><a href="javascript:void(0)">Banners</a></li>
                     </ol>
                 </div>
             </div>
             <!-- row -->
+
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <form id="bannerForm">
+                                    <h4 class="card-title">Add Banners</h4>
+                                    <div class="form-validation">
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <label class="col-form-label" for="title">Title <span
+                                                        class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" id="title" name="title"
+                                                    placeholder="Enter Title">
+                                                <small class="text-danger" id="title_error"></small>
+
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <label class="col-form-label" for="banner">Banner <span
+                                                        class="text-danger">*</span></label>
+                                                <input type="file" class="form-control" id="banner" name="banner">
+                                                <small class="text-danger" id="banner_error"></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-lg-8 ml-auto">
+                                            <button type="submit" class="btn btn-success button_submit">Submit</button>
+                                        </div>
+                                    </div>
+                                </form>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body">
-                                <h4 class="card-title">Enquiry List</h4>
+                                <h4 class="card-title">Blog List</h4>
                                 <div class="table-responsive">
-                                    <table id="EnquiryDataTable" class="table table-striped table-bordered zero-configuration">
+                                    <table id="blogsTable"
+                                        class="table table-striped table-bordered zero-configuration">
                                         <thead>
                                             <tr>
                                                 <th>Sr. No</th>
-                                                <th>Name</th>
-                                                <th>Email</th>
-                                                <th>Contact No.</th>
-                                                <th>Message</th>
+                                                <th>Title</th>
+                                                <th>Image</th>
                                                 <th>Action</th>
+
                                             </tr>
                                         </thead>
                                     </table>
@@ -105,37 +143,51 @@
         </div>
         <!-- #/ container -->
         <!-- Modal Popup -->
-         <!-- View Blog Details Modal -->
-         <div class="modal fade" id="viewEnquiryModal" tabindex="-1" role="dialog" aria-labelledby="viewEnquiryModalLabel"
+        <!-- View Blog Details Modal -->
+        <div class="modal fade" id="viewBlogModal" tabindex="-1" role="dialog" aria-labelledby="viewBlogModalLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="viewEnquiryModalLabel">View Member Details</h5>
+                        <h5 class="modal-title" id="viewBlogModalLabel">View Blog Details</h5>
                         <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
-                        <div class="row">
-                            <!-- Title Section -->
-                            <div class="form-group col-md-6">
-                                <label for="view_name" class="font-weight-bold">Name</label>
-                                <p id="view_name" class="lead text-dark">Loading...</p>
-                            </div>                           
-                            <div class="form-group col-md-6">
-                                <label for="view_email" class="font-weight-bold">Email</label>
-                                <p id="view_email" class="text-muted">Loading...</p>
-                            </div>
-                            <div class="form-group col-md-6">
-                                <label for="view_contact" class="font-weight-bold">Contact</label>
-                                <p id="view_contact" class="text-muted">Loading...</p>
-                            </div>                           
-                            <div class="form-group col-md-6">
-                                <label for="view_message" class="font-weight-bold">Message</label>
-                                <p id="view_message" class="text-justify">Loading...</p>
+                        <!-- Title Section -->
+                        <div class="form-group">
+                            <label for="view_title" class="font-weight-bold">Title</label>
+                            <p id="view_title" class="lead text-dark">Loading...</p>
+                        </div>
+
+                        <!-- Slug Section -->
+                        <div class="form-group">
+                            <label for="view_slug" class="font-weight-bold">Slug</label>
+                            <p id="view_slug" class="text-muted">Loading...</p>
+                        </div>
+
+                        <!-- Content Section -->
+                        <div class="form-group">
+                            <label for="view_content" class="font-weight-bold">Content</label>
+                            <p id="view_content" class="text-justify">Loading...</p>
+                        </div>
+
+                        <!-- Featured Image Section -->
+                        <div class="form-group">
+                            <label for="view_featured_image" class="font-weight-bold">Featured Image</label>
+                            <div class="text-center">
+                                <img id="view_featured_image" src="" alt="Featured Image"
+                                    class="img-fluid rounded shadow-sm" style="max-height: 400px; max-width: 100%;">
                             </div>
                         </div>
+
+                        <!-- Status Section -->
+                        <div class="form-group">
+                            <label for="view_status" class="font-weight-bold">Status</label>
+                            <p id="view_status" class="badge badge-info">Loading...</p>
+                        </div>
+
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -143,65 +195,51 @@
                 </div>
             </div>
         </div>
-        <div class="modal fade" id="editEnquiryModal" tabindex="-1" role="dialog" aria-labelledby="editEnquiryModalLabel"
+
+
+        <div class="modal fade" id="editBlogModal" tabindex="-1" role="dialog" aria-labelledby="editBlogModalLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="editEnquiryModalLabel">Edit Enquiry</h5>
+                        <h5 class="modal-title" id="editBlogModalLabel">Edit Blog</h5>
                         <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
-                        <form id="editMemberForm" enctype="multipart/form-data">
-                            <input type="hidden" id="edit_member_id" name="edit_member_id">
+                        <form id="editBlogForm" enctype="multipart/form-data">
+                            <input type="hidden" id="edit_banner_id" name="edit_banner_id">
 
                             <div class="row">
-                                <!-- Title -->
-                                <div class="form-group col-md-6">
-                                    <label for="edit_name" class="font-weight-bold">Name</label>
-                                    <input type="text" class="form-control" id="edit_name" name="edit_name"
+                                <div class="col-lg-6">
+                                    <label class="col-form-label" for="title">Title <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="title" name="title"
                                         placeholder="Enter Title">
-                                    <small class="text-danger" id="edit_name_error"></small>
-                                </div>
+                                    <small class="text-danger" id="title_error"></small>
 
-                                <!-- Slug -->
+                                </div>
                                 <div class="form-group col-md-6">
-                                    <label for="edit_email" class="font-weight-bold">Email</label>
-                                    <input type="text" class="form-control" id="edit_email" name="edit_email"
-                                        placeholder="Enter Slug">
-                                    <small class="text-danger" id="edit_email_error"></small>
+                                    <label for="edit_featured_image" class="font-weight-bold">Featured Image</label>
+                                    <input type="file" class="form-control" id="edit_featured_image"
+                                        name="edit_featured_image">
+                                    <small class="text-danger" id="edit_featured_image_error"></small>
                                 </div>
-
-
-                                <div class="form-group">
-                                    <!-- Content (full width) -->
-                                    <label for="edit_contact_no" class="font-weight-bold">Contact No</label>
-                                    <textarea class="form-control" id="edit_contact_no" name="edit_contact_no" rows="5"
-                                        placeholder="Enter Content"></textarea>
-                                    <small class="text-danger" id="edit_contact_no_error"></small>
+                                <div class="form-group text-center">
+                                    <label for="current_featured_image" class="font-weight-bold">Current Featured
+                                        Image</label><br>
+                                    <img id="current_featured_image" src="" alt="Featured Image"
+                                        class="img-fluid rounded shadow-sm" style="max-height: 200px; display: none;">
                                 </div>
-
                             </div>
-                            <!-- Status -->
-                            <div class="form-group col-md-6">
-                                <label for="edit_status" class="font-weight-bold">Status</label>
-                                <select class="form-control" id="edit_status" name="edit_status">
-                                    <option value="draft">Draft</option>
-                                    <option value="published">Published</option>
-                                    <option value="archived">Archived</option>
-                                </select>
-                                <small class="text-danger" id="edit_status_error"></small>
-                            </div>
-
                             <!-- Submit Button -->
                             <!-- Modal Footer -->
                             <div class="modal-footer">
                                 <!-- For Bootstrap 4 -->
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
 
-                                <button type="submit" class="btn btn-primary" form="editBlogForm">Update</button>
+                                <button type="submit" class="btn btn-primary">Update</button>
                             </div>
                         </form>
                     </div>
@@ -210,12 +248,12 @@
         </div>
 
         <!-- Delete Confirmation Modal -->
-        <div class="modal fade" id="deleteMemberModal" tabindex="-1" role="dialog"
-            aria-labelledby="deleteMemberModalLabel" aria-hidden="true">
+        <div class="modal fade" id="deleteBlogModal" tabindex="-1" role="dialog" aria-labelledby="deleteBlogModalLabel"
+            aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="deleteMemberModalLabel">Confirm Soft Delete</h5>
+                        <h5 class="modal-title" id="deleteBlogModalLabel">Confirm Soft Delete</h5>
                         <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -230,6 +268,7 @@
                 </div>
             </div>
         </div>
+
     </div>
     <!--**********************************
             Content body end
@@ -257,8 +296,7 @@
         Scripts
     ***********************************-->
     <?php include('common/js_files.php');?>
-    <script src="<?= base_url()?>assets/view_js/enquiry.js"></script>
-
+    <script src="<?= base_url()?>assets/view_js/blogs.js"></script>
 </body>
 
 </html>

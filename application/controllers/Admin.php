@@ -1,6 +1,9 @@
 <?php
-ob_start(); // Start output buffering
-defined('BASEPATH') OR exit('No direct script access allowed');
+ob_start();
+defined('BASEPATH') or exit('No direct script access allowed');
+header("Access-Control-Allow-Origin: *"); // or use a specific domain instead of '*'
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
 class Admin extends CI_Controller {
 
@@ -205,9 +208,7 @@ class Admin extends CI_Controller {
 		} else {
 			echo json_encode(['status' => 'error', 'message' => 'Failed to soft delete blog.']);
 		}
-	}
-
-	
+	}	
 	public function export_member_data()
 	{
 		$admin_session = $this->session->userdata('admin_session');
@@ -232,24 +233,6 @@ class Admin extends CI_Controller {
 		$response['data'] = $this->model->selectWhereData('tbl_users', array('id' => $id), '*', true);
 		$response['status'] = 'success';
 		echo json_encode($response);
-	}
-	public function export_enquires_data()
-	{
-		$admin_session = $this->session->userdata('admin_session');
-		if (empty($admin_session)) {
-			redirect('common');
-		}else{
-			$this->load->view('admin/export_enquires_data');
-		}
-	}
-	public function announcement()
-	{
-		$admin_session = $this->session->userdata('admin_session');
-		if (empty($admin_session)) {
-			redirect('common');
-		}else{
-			$this->load->view('admin/announcement');
-		}
 	}
 	public function membership_category()
 	{
@@ -591,4 +574,238 @@ class Admin extends CI_Controller {
 			$this->load->view('admin/team_member');
 		}
 	}
+	public function add_team_member()
+	{
+		$this->load->library('form_validation');
+
+		$this->form_validation->set_rules('name', 'Name', 'required|trim');
+		$this->form_validation->set_rules('designation', 'Designation', 'required|trim');
+		$this->form_validation->set_rules('facebook_link', 'Facebook Link', 'required|trim');
+		$this->form_validation->set_rules('linkedin_link', 'Linkedin Link', 'required|trim');
+		$this->form_validation->set_rules('youtube_link', 'Youtube Link', 'required|trim');
+		$this->form_validation->set_rules('twitter_link', 'Twitter Link', 'required|trim');
+		$this->form_validation->set_rules('description', 'Description', 'required|trim');
+
+		if (empty($_FILES['photo']['name'])) {
+			$this->form_validation->set_rules('photo', 'Photo', 'required');
+		}
+
+		if ($this->form_validation->run() == FALSE) {
+			echo json_encode([
+				'status' => 'error',
+				'errors' => $this->form_validation->error_array()
+			]);
+			return;
+		} else {
+			// Handle file upload
+			$config['upload_path']   = './uploads/team/';
+			$config['allowed_types'] = 'jpg|jpeg|png|gif';
+			$config['max_size']      = 2048;
+
+			$this->load->library('upload', $config);
+
+			if (!$this->upload->do_upload('photo')) {
+				echo json_encode([
+					'status' => 'error',
+					'errors' => ['photo' => $this->upload->display_errors()]
+				]);
+			} else {
+				$uploadData = $this->upload->data();
+				$exist = $this->model->selectWhereData(
+					'tbl_team_members',
+					['LOWER(name)' => strtolower($this->input->post('name'))],
+					'*',
+					true
+				);
+				if ($exist) {
+					echo json_encode([
+						'status' => 'error',
+						'errors' => ['name' => 'This team member already exists.']
+					]);
+				} else {
+					$data = [
+						'name'          => $this->input->post('name'),
+						'designation'         => $this->input->post('designation'),
+						'photo'         => 'uploads/team/' . $uploadData['file_name'],
+						'facebook_link' => $this->input->post('facebook_link'),
+						'linkedin_link' => $this->input->post('linkedin_link'),
+						'youtube_link'  => $this->input->post('youtube_link'),
+						'twitter_link'  => $this->input->post('twitter_link'),
+						'description'  => $this->input->post('description'),
+					];
+					$this->model->insertData('tbl_team_members', $data);
+					echo json_encode(['status' => true, 'message' => 'Team member added successfully!']);
+				}	
+			}
+		}
+	}
+	public function team_member_data_on_datatable(){
+		$response['data'] = $this->model->selectWhereData('tbl_team_members', array('is_delete' => '1'), '*', false,array('id'=>'desc'));
+		$response['status'] = 'success';
+		echo json_encode($response);
+	}
+	public function team_member_data_on_id(){
+		$id = $this->input->post('id');
+		$response['data'] = $this->model->selectWhereData('tbl_team_members', array('id' => $id), '*', true);
+		$response['status'] = 'success';
+		echo json_encode($response);
+	}
+	public function update_team_member()
+	{
+		$this->load->library('form_validation');
+
+		// Validate form fields
+		$this->form_validation->set_rules('edit_name', 'Name', 'required|trim');
+		$this->form_validation->set_rules('edit_designation', 'Designation', 'required|trim');
+		$this->form_validation->set_rules('edit_facebook_link', 'Facebook Link', 'required|trim');
+		$this->form_validation->set_rules('edit_linkedin_link', 'Linkedin Link', 'required|trim');
+		$this->form_validation->set_rules('edit_youtube_link', 'Youtube Link', 'required|trim');
+		$this->form_validation->set_rules('edit_twitter_link', 'Twitter Link', 'required|trim');
+		$this->form_validation->set_rules('edit_description', 'Description', 'required|trim');
+
+		// Check if the photo is uploaded, only mark it as required if a new photo is to be uploaded
+		if (!empty($_FILES['edit_photo']['name'])) {
+			$this->form_validation->set_rules('edit_photo', 'Photo', 'required');
+		}
+
+		// Check validation
+		if ($this->form_validation->run() == FALSE) {
+			echo json_encode([
+				'status' => 'error',
+				'errors' => $this->form_validation->error_array()
+			]);
+			return;
+		} else {
+			// Get the current photo path, so if no new photo is uploaded, we can use the old one
+			$photoPath = $this->input->post('current_photo'); // This should be passed in from JS if no new photo is uploaded
+
+			// Handle file upload if a new photo is uploaded
+			if (!empty($_FILES['edit_photo']['name'])) {
+				$config['upload_path']   = './uploads/team/';
+				$config['allowed_types'] = 'jpg|jpeg|png|gif';
+				$config['max_size']      = 2048;
+
+				$this->load->library('upload', $config);
+
+				if (!$this->upload->do_upload('edit_photo')) {
+					echo json_encode([
+						'status' => 'error',
+						'errors' => ['edit_photo' => $this->upload->display_errors()]
+					]);
+					return;
+				} else {
+					// If file upload successful, delete the old photo
+					$uploadData = $this->upload->data();
+					$photoPath = 'uploads/team/' . $uploadData['file_name'];
+
+					// Fetch the old image path to delete it
+					$oldData = $this->model->selectWhereData('tbl_team_members', ['id' => $this->input->post('edit_member_id')]);
+					$oldPhoto = $oldData['photo'] ?? '';
+
+					// Delete old photo if it exists
+					if (!empty($oldPhoto) && file_exists(FCPATH . $oldPhoto)) {
+						unlink(FCPATH . $oldPhoto);
+					}
+				}
+			}
+
+			// Check if a member with the same name already exists (ignoring case)
+			$exist = $this->model->selectWhereData(
+				'tbl_team_members',
+				['LOWER(name)' => strtolower($this->input->post('edit_name')), 'id !=' => $this->input->post('edit_member_id')],
+				'*',
+				true
+			);
+
+			if ($exist) {
+				echo json_encode([
+					'status' => 'error',
+					'errors' => ['edit_name' => 'This team member already exists.']
+				]);
+				return;
+			} else {
+				// Prepare the data to be updated
+				$data = [
+					'name'           => $this->input->post('edit_name'),
+					'designation'    => $this->input->post('edit_designation'),
+					'photo'          => $photoPath, // Store the path of the photo (uploaded or existing)
+					'facebook_link'  => $this->input->post('edit_facebook_link'),
+					'linkedin_link'  => $this->input->post('edit_linkedin_link'),
+					'youtube_link'   => $this->input->post('edit_youtube_link'),
+					'twitter_link'   => $this->input->post('edit_twitter_link'),
+					'description'    => $this->input->post('edit_description'),
+				];
+
+				// Update the team member's data
+				$this->model->updateData('tbl_team_members', $data, ['id' => $this->input->post('edit_member_id')]);
+
+				// Return success response with updated photo URL
+				echo json_encode([
+					'status' => 'success',
+					'message' => 'Team member updated successfully!',
+					'edit_photo' => base_url($photoPath) // Include the URL of the updated photo
+				]);
+			}
+		}
+	}
+	public function delete_team_member()
+	{
+		$id = $this->input->post('id');
+		if (!$id) {
+			echo json_encode(['status' => 'error', 'message' => 'Invalid Blog ID.']);
+			return;
+		}
+		// Update blog status to "deleted" or "inactive"
+		$data = [
+			'is_delete' => '0', // Assuming 0 means deleted
+		];
+		$updated = $this->model->updateData('tbl_team_members', $data, ['id' => $id]);
+
+		if ($updated) {
+			echo json_encode(['status' => 'success', 'message' => 'Team Member deleted successfully.']);
+		} else {
+			echo json_encode(['status' => 'error', 'message' => 'Failed to delete Team Member.']);
+		}
+	}
+	public function export_enquires_data()
+	{
+		$admin_session = $this->session->userdata('admin_session');
+		if (empty($admin_session)) {
+			redirect('common');
+		}else{
+			$this->load->view('admin/export_enquires_data');
+		}
+	}
+	public function export_enquires_data_on_datatable(){
+		$response['data'] = $this->model->selectWhereData('tbl_enquiries', array('is_delete' => '1'), '*', false,array('id'=>'desc'));
+		$response['status'] = 'success';
+		echo json_encode($response);
+	}
+	public function export_enquires_data_on_id(){
+		$id = $this->input->post('id');
+		$response['data'] = $this->model->selectWhereData('tbl_enquiries', array('id' => $id), '*', true);
+		$response['status'] = 'success';
+		echo json_encode($response);
+	}	
+
+	public function announcement()
+	{
+		$admin_session = $this->session->userdata('admin_session');
+		if (empty($admin_session)) {
+			redirect('common');
+		}else{
+			$this->load->view('admin/announcement');
+		}
+	}
+	public function banners()
+	{
+		$admin_session = $this->session->userdata('admin_session');
+		if (empty($admin_session)) {
+			redirect('common');
+		}else{
+			$this->load->view('admin/banners');
+		}
+	}
+	
 }
+	
