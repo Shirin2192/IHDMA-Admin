@@ -120,17 +120,16 @@
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body">
-                                <h4 class="card-title">Blog List</h4>
+                                <h4 class="card-title">Banner List</h4>
                                 <div class="table-responsive">
-                                    <table id="blogsTable"
+                                    <table id="BannerTable"
                                         class="table table-striped table-bordered zero-configuration">
                                         <thead>
                                             <tr>
                                                 <th>Sr. No</th>
                                                 <th>Title</th>
-                                                <th>Image</th>
+                                                <th>Banner</th>
                                                 <th>Action</th>
-
                                             </tr>
                                         </thead>
                                     </table>
@@ -296,7 +295,7 @@
         Scripts
     ***********************************-->
     <?php include('common/js_files.php');?>
-    <script src="<?= base_url()?>assets/view_js/blogs.js"></script>
+    <script src="<?= base_url()?>assets/view_js/banner.js"></script>
 </body>
 
 </html>

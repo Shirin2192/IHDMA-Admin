@@ -23,9 +23,7 @@ class Member extends CI_Controller {
 		$state        = $this->input->post('state');
 		$postal_code  = $this->input->post('postal_code');
 		$country      = $this->input->post('country');
-		$fax          = $this->input->post('fax');
-		$dob          = $this->input->post('dob');
-		$terms_accepted = $this->input->post('terms_accepted');
+		$dob          = $this->input->post('dob');		
 	
 		// Check for existing email or username
 		$exist_email = $this->model->selectWhereData('tbl_users', ['email' => $email, 'user_name' => $user_name, 'is_delete' => '0']);
@@ -60,9 +58,7 @@ class Member extends CI_Controller {
 			'state'          => $state,
 			'postal_code'    => $postal_code,
 			'country'        => $country,
-			'fax'            => $fax,
-			'dob'            => $dob,
-			'terms_accepted' => $terms_accepted
+			'dob'            => $dob,			
 		];
 	
 		$insert = $this->model->insertData('tbl_users', $insertData);
@@ -255,5 +251,67 @@ class Member extends CI_Controller {
 			]);
 		}
 	}
+	public function become_a_member_registration() {
+		$name         = $this->input->post('name');
+		$user_name    = $this->input->post('user_name');
+		$email        = $this->input->post('email');
+		$password     = $this->input->post('password');
+		$mobile       = $this->input->post('mobile');
+		$address1     = $this->input->post('address1');
+		$address2     = $this->input->post('address2');
+		$city         = $this->input->post('city');
+		$state        = $this->input->post('state');
+		$postal_code  = $this->input->post('postal_code');
+		$country      = $this->input->post('country');
+		$dob          = $this->input->post('dob');		
 	
+		// Check for existing email or username
+		$exist_email = $this->model->selectWhereData('tbl_users', ['email' => $email, 'user_name' => $user_name, 'is_delete' => '0']);
+		if ($exist_email) {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Email or Username already exists.'
+			]);
+			return;
+		}
+		$exist_contact = $this->model->selectWhereData('tbl_users', ['mobile' => $mobile, 'is_delete' => '0']);
+		if ($exist_contact) {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Mobile number already exists.'
+			]);
+			return;
+		}	
+		// Hash the password (strongly recommended)
+		$hashed_password = decy_ency('encrypt', $password);
+	
+		// Insert new user
+		$insertData = [
+			'name'           => $name,
+			'user_name'      => $user_name,
+			'email'          => $email,
+			'password'       => $hashed_password,
+			'mobile'         => $mobile,
+			'address1'       => $address1,
+			'address2'       => $address2,
+			'city'           => $city,
+			'state'          => $state,
+			'postal_code'    => $postal_code,
+			'country'        => $country,
+			'dob'            => $dob,			
+		];
+	
+		$insert = $this->model->insertData('tbl_users', $insertData);
+		if ($insert) {
+			echo json_encode([
+				'status' => 'success',
+				'message' => 'User registered successfully.'
+			]);
+		} else {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'User registration failed.'
+			]);
+		}
+	}	
 }

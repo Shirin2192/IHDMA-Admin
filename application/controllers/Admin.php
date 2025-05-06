@@ -806,6 +806,59 @@ class Admin extends CI_Controller {
 			$this->load->view('admin/banners');
 		}
 	}
+	public function save_banners() {
+		$this->load->library('form_validation');
+		$this->form_validation->set_rules('title', 'Title', 'required|trim');
+		
+		if ($this->form_validation->run() == FALSE) {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Validation failed.',
+				'errors' => $this->form_validation->error_array()
+			]);
+			return;
+		}
+		// Handle File Upload
+		$banner = null;
+		if (!empty($_FILES['banner']['name'])) {
+			$config['upload_path'] = './uploads/banners/';
+			$config['allowed_types'] = 'jpg|jpeg|png|gif';
+			$config['file_name'] = time() . '_' . $_FILES['banner']['name'];
+			$config['overwrite'] = false;
 	
+			$this->load->library('upload', $config);
+	
+			if (!$this->upload->do_upload('banner')) {
+				echo json_encode([
+					'status' => 'error',
+					'message' => 'Image upload failed.',
+					'upload_error' => strip_tags($this->upload->display_errors())
+				]);
+				return;
+			} else {
+				$banner = $this->upload->data('banner');
+			}
+		}
+	
+		$data = [
+			'title' => $this->input->post('title'),
+			'banner' => $featured_image,
+		];
+
+		$insert = $this->model->insertData('tbl_banners', $data);
+
+		if ($insert) {
+			echo json_encode([
+				'status' => 'success',
+				'message' => 'Banner saved successfully.'
+			]);
+		} else {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Failed to save banner. Please try again.'
+			]);
+		}
+	}
+
 }
 	
