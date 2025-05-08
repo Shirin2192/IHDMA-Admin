@@ -130,7 +130,7 @@ $('#deleteMemberModal').modal('show');
                     // Display success message using SweetAlert
                     Swal.fire({
                         icon: 'success',
-                        title: 'Blog Soft Deleted',
+                        title: 'Member Deleted',
                         text: response.message,
                         timer: 2000, // Auto-close after 2 seconds (2000 ms)
                         confirmButtonColor: '#3085d6',

@@ -72,7 +72,7 @@
                 <div class="col p-md-0">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="javascript:void(0)">Dashboard</a></li>
-                        <li class="breadcrumb-item active"><a href="javascript:void(0)">Banners</a></li>
+                        <li class="breadcrumb-item active"><a href="javascript:void(0)">Journal PDFs</a></li>
                     </ol>
                 </div>
             </div>
@@ -83,8 +83,8 @@
                     <div class="col-lg-12">
                         <div class="card">
                             <div class="card-body">
-                                <form id="bannerForm">
-                                    <h4 class="card-title">Add Banners</h4>
+                                <form id="JournalPdfForm">
+                                    <h4 class="card-title">Add Journal PDFs</h4>
                                     <div class="form-validation">
                                         <div class="row">
                                             <div class="col-lg-6">
@@ -96,10 +96,10 @@
 
                                             </div>
                                             <div class="col-lg-6">
-                                                <label class="col-form-label" for="banner">Banner <span
+                                                <label class="col-form-label" for="journal_pdf">PDFs <span
                                                         class="text-danger">*</span></label>
-                                                <input type="file" class="form-control" id="banner" name="banner">
-                                                <small class="text-danger" id="banner_error"></small>
+                                                <input type="file" class="form-control" id="journal_pdf" name="journal_pdf">
+                                                <small class="text-danger" id="journal_pdf_error"></small>
                                             </div>
                                         </div>
                                     </div>
@@ -120,15 +120,15 @@
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body">
-                                <h4 class="card-title">Banner List</h4>
+                                <h4 class="card-title">Journal PDFs List</h4>
                                 <div class="table-responsive">
-                                    <table id="BannerTable"
+                                    <table id="JournalPDFsTable"
                                         class="table table-striped table-bordered zero-configuration">
                                         <thead>
                                             <tr>
                                                 <th>Sr. No</th>
                                                 <th>Title</th>
-                                                <th>Banner</th>
+                                                <th>Journal PDFs</th>
                                                 <th>Action</th>
                                             </tr>
                                         </thead>
@@ -143,12 +143,12 @@
         <!-- #/ container -->
         <!-- Modal Popup -->
         <!-- View Blog Details Modal -->
-        <div class="modal fade" id="viewBannersModal" tabindex="-1" role="dialog" aria-labelledby="viewBannersModalLabel"
+        <div class="modal fade" id="viewJournalPdfsModal" tabindex="-1" role="dialog" aria-labelledby="viewJournalPdfsLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="viewBannersModalLabel">View Banners</h5>
+                        <h5 class="modal-title" id="viewJournalPdfsLabel">View Journal PDFs</h5>
                         <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -162,10 +162,9 @@
 
                         <!-- Featured Image Section -->
                         <div class="form-group">
-                            <label for="view_banners" class="font-weight-bold">Banners</label>
-                            <div class="text-center">
-                                <img id="view_banners" src="" alt="Banners" class="img-fluid rounded shadow-sm"
-                                    style="max-height: 400px; max-width: 100%;">
+                            <label for="view_pdfs" class="font-weight-bold">Journal PDFs</label>
+                            <div class="text-center">                                
+                                <a href="#" id="view_pdfs_link" class="btn btn-primary mt-2" target="_blank">View PDF</a>
                             </div>
                         </div>
                     </div>
@@ -175,20 +174,20 @@
                 </div>
             </div>
         </div>
-        <div class="modal fade" id="editBannersModal" tabindex="-1" role="dialog" aria-labelledby="editBannersModalLabel"
+        <div class="modal fade" id="editJournalPdfsModal" tabindex="-1" role="dialog" aria-labelledby="editJournalPdfsModalLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="editBannersModalLabel">Edit Banners</h5>
+                        <h5 class="modal-title" id="editJournalPdfsModalLabel">Edit Journal PDFs</h5>
                         <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
-                        <form id="editBannerForm" enctype="multipart/form-data">
-                            <input type="hidden" id="edit_banner_id" name="edit_banner_id">
-                            <input type="hidden" id="edit_current_banner" name="current_banner">
+                        <form id="editpdfsForm" enctype="multipart/form-data">
+                        <input type="hidden" id="edit_pdf_id" name="edit_pdf_id">
+                        <input type="hidden" id="edit_current_pdf" name="edit_current_pdf">
 
                             <div class="row">
                                 <div class="col-lg-6">
@@ -200,15 +199,15 @@
 
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="edit_banner" class="font-weight-bold">Banner</label>
-                                    <input type="file" class="form-control" id="edit_banner"
-                                        name="edit_banner">
-                                    <small class="text-danger" id="edit_banner_error"></small>
+                                    <label for="edit_pdf" class="font-weight-bold">Journal PDFs</label>
+                                    <input type="file" class="form-control" id="edit_pdf"
+                                        name="edit_pdf">
+                                    <small class="text-danger" id="edit_pdf_error"></small>
                                 </div>
-                                <div class="form-group text-center">
-                                    <label for="current_banner" class="font-weight-bold">Current Banner</label><br>
-                                    <img id="current_banner" alt="Current Banner"
-                                        class="img-fluid rounded shadow-sm" style="max-height: 200px; display: none;">
+                                <div class="form-group text-center">`
+                                    <label for="current_pdfs" class="font-weight-bold">Current Journal PDFs</label><br>
+                                    <a id="current_pdf_link" href="#" target="_blank" class="btn btn-sm btn-secondary">View Current PDF</a>
+
                                 </div>
                             </div>
                             <!-- Submit Button -->
@@ -226,18 +225,18 @@
         </div>
 
         <!-- Delete Confirmation Modal -->
-        <div class="modal fade" id="deleteBannerModal" tabindex="-1" role="dialog" aria-labelledby="deleteBlogModalLabel"
+        <div class="modal fade" id="deleteJournalPdfsModal" tabindex="-1" role="dialog" aria-labelledby="deleteBlogModalLabel"
             aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="deleteBlogModalLabel">Confirm Soft Delete</h5>
+                        <h5 class="modal-title" id="deleteBlogModalLabel">Confirm Delete</h5>
                         <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
-                        <p>Are you sure you want to soft delete this Banner? This action cannot be undone.</p>
+                        <p>Are you sure you want to soft delete this Journal PDFs? This action cannot be undone.</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -274,7 +273,7 @@
         Scripts
     ***********************************-->
     <?php include('common/js_files.php');?>
-    <script src="<?= base_url()?>assets/view_js/banner.js"></script>
+    <script src="<?= base_url()?>assets/view_js/journals_pdf.js"></script>
 </body>
 
 </html>

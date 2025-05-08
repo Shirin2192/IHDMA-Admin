@@ -823,11 +823,11 @@ class Admin extends CI_Controller {
 		if (!empty($_FILES['banner']['name'])) {
 			$config['upload_path'] = './uploads/banners/';
 			$config['allowed_types'] = 'jpg|jpeg|png|gif';
-			$config['file_name'] = time() . '_' . $_FILES['banner']['name'];
+			$config['file_name'] = $_FILES['banner']['name'];
 			$config['overwrite'] = false;
-	
+		
 			$this->load->library('upload', $config);
-	
+		
 			if (!$this->upload->do_upload('banner')) {
 				echo json_encode([
 					'status' => 'error',
@@ -836,17 +836,15 @@ class Admin extends CI_Controller {
 				]);
 				return;
 			} else {
-				$banner = $this->upload->data('banner');
+				$uploadData = $this->upload->data();
+				$banner = $uploadData['file_name'];
 			}
 		}
-	
 		$data = [
 			'title' => $this->input->post('title'),
-			'banner' => $featured_image,
+			'banners' => $banner,
 		];
-
 		$insert = $this->model->insertData('tbl_banners', $data);
-
 		if ($insert) {
 			echo json_encode([
 				'status' => 'success',
@@ -857,6 +855,368 @@ class Admin extends CI_Controller {
 				'status' => 'error',
 				'message' => 'Failed to save banner. Please try again.'
 			]);
+		}
+	}
+	public function banners_data_on_datatable(){
+		$response['data'] = $this->model->selectWhereData('tbl_banners', array('is_delete' => '1'), '*', false,array('id'=>'desc'));
+		$response['status'] = 'success';
+		echo json_encode($response);
+	}
+	public function banners_data_on_id(){
+		$id = $this->input->post('id');
+		$response['data'] = $this->model->selectWhereData('tbl_banners', array('id' => $id), '*', true);
+		$response['status'] = 'success';
+		echo json_encode($response);
+	}
+	public function update_banners() {
+		$this->load->library('form_validation');
+		$this->form_validation->set_rules('edit_title', 'Title', 'required|trim');
+	
+		if ($this->form_validation->run() == FALSE) {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Validation failed.',
+				'errors' => $this->form_validation->error_array()
+			]);
+			return;
+		}
+	
+		$id = $this->input->post('edit_banner_id');
+		$currentBanner = $this->input->post('current_banner'); // e.g. old_image.jpg
+		$newBanner = $currentBanner; // fallback to current image
+		$newFileUploaded = false;
+		
+	
+		// Handle File Upload
+		if (!empty($_FILES['edit_banner']['name'])) {
+			$config['upload_path'] = './uploads/banners/';
+			$config['allowed_types'] = 'jpg|jpeg|png|gif';
+			$config['file_name'] = $_FILES['edit_banner']['name'];
+			$config['overwrite'] = false;
+	
+			$this->load->library('upload', $config);
+	
+			if (!$this->upload->do_upload('edit_banner')) {
+				echo json_encode([
+					'status' => 'error',
+					'message' => 'Image upload failed.',
+					'upload_error' => strip_tags($this->upload->display_errors())
+				]);
+				return;
+			} else {
+				$uploadData = $this->upload->data();
+				$newBanner = $uploadData['file_name'];
+				$newFileUploaded = true;
+			}
+		}
+	
+		$data = [
+			'title'   => $this->input->post('edit_title'),
+			'banners' => $newBanner,
+		];
+		$updated = $this->model->updateData('tbl_banners', $data, ['id' => $id]);
+	
+		if ($updated) {
+			// Delete only if a new image was uploaded
+			if ($newFileUploaded && $newBanner !== $currentBanner && file_exists('./uploads/banners/' . $currentBanner)) {
+				unlink('./uploads/banners/' . $currentBanner);
+			}
+	
+			echo json_encode([
+				'status' => 'success',
+				'message' => 'Banner updated successfully.',
+				'banner_path' => base_url('uploads/banners/' . $newBanner)
+			]);
+		} else {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Failed to update banner.'
+			]);
+		}
+	}
+	
+	public function delete_banners()
+	{
+		$id = $this->input->post('id');
+		if (!$id) {
+			echo json_encode(['status' => 'error', 'message' => 'Invalid Blog ID.']);
+			return;
+		}
+		// Update blog status to "deleted" or "inactive"
+		$data = [
+			'is_delete' => '0', // Assuming 0 means deleted
+		];
+		$updated = $this->model->updateData('tbl_banners', $data, ['id' => $id]);
+
+		if ($updated) {
+			echo json_encode(['status' => 'success', 'message' => 'Banner deleted successfully.']);
+		} else {
+			echo json_encode(['status' => 'error', 'message' => 'Failed to delete Banner.']);
+		}	
+	}
+
+	public function journal_pdfs()
+	{
+		$admin_session = $this->session->userdata('admin_session');
+		if (empty($admin_session)) {
+			redirect('common');
+		}else{
+			$this->load->view('admin/journal_pdfs');
+		}
+	}	
+	public function save_journal_pdf() {
+		$this->load->library('form_validation');
+		$this->form_validation->set_rules('title', 'Title', 'required|trim');
+		
+		if ($this->form_validation->run() == FALSE) {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Validation failed.',
+				'errors' => $this->form_validation->error_array()
+			]);
+			return;
+		}
+		// Handle File Upload
+		$journal_pdf = null;
+		if (!empty($_FILES['journal_pdf']['name'])) {
+			$config['upload_path'] = './uploads/journal_pdfs/';
+			$config['allowed_types'] = 'pdf';
+			$config['file_name'] = $_FILES['journal_pdf']['name'];
+			$config['overwrite'] = false;
+		
+			$this->load->library('upload', $config);
+		
+			if (!$this->upload->do_upload('journal_pdf')) {
+				echo json_encode([
+					'status' => 'error',
+					'message' => 'PDF upload failed.',
+					'upload_error' => strip_tags($this->upload->display_errors())
+				]);
+				return;
+			} else {
+				$uploadData = $this->upload->data();
+				$journal_pdf = $uploadData['file_name'];
+			}
+		}
+	
+		if (empty($journal_pdf)) {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'No PDF file uploaded.'
+			]);
+			return;
+		}
+	
+		if (empty($this->input->post('title'))) {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Title is required.'
+			]);
+			return;
+		}
+		$data = [
+			'title' => $this->input->post('title'),
+			'file_path' => $journal_pdf,
+		];
+		$insert = $this->model->insertData('tbl_journals', $data);
+		if ($insert) {
+			echo json_encode([
+				'status' => 'success',
+				'message' => 'Journal PDF saved successfully.'
+			]);
+		} else {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Failed to save Journal PDF. Please try again.'
+			]);
+		}
+	}
+	public function journal_pdf_data_on_datatable(){
+		$response['data'] = $this->model->selectWhereData('tbl_journals', array('is_delete' => '1'), '*', false,array('id'=>'desc'));
+		$response['status'] = 'success';
+		echo json_encode($response);
+	}
+	public function journal_pdf_data_on_id(){
+		$id = $this->input->post('id');
+		$response['data'] = $this->model->selectWhereData('tbl_journals', array('id' => $id), '*', true);
+		$response['status'] = 'success';
+		echo json_encode($response);
+	}
+	public function update_journal_pdf()
+	{
+		$this->load->library('form_validation');
+
+		// Validate input fields
+		$this->form_validation->set_rules('edit_title', 'Title', 'required|trim');
+		$this->form_validation->set_rules('edit_pdf_id', 'PDF ID', 'required');
+
+		if ($this->form_validation->run() == FALSE) {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Validation failed.',
+				'errors'  => $this->form_validation->error_array()
+			]);
+			return;
+		}
+
+		// Gather form data
+		$id = $this->input->post('edit_pdf_id');
+		$title = $this->input->post('edit_title');
+		$currentFile = $this->input->post('edit_current_pdf'); // existing file name
+		$newFile = $currentFile; // fallback
+		$newFileUploaded = false;
+
+		// Handle file upload if a new file is selected
+		if (!empty($_FILES['edit_pdf']['name'])) {
+			$config['upload_path'] = './uploads/journal_pdfs/';
+			$config['allowed_types'] = 'pdf';
+			$config['file_name'] = time() . '_' . $_FILES['edit_pdf']['name'];
+			$config['overwrite'] = false;
+
+			$this->load->library('upload', $config);
+
+			if (!$this->upload->do_upload('edit_pdf')) {
+				echo json_encode([
+					'status' => 'error',
+					'message' => 'PDF upload failed.',
+					'upload_error' => strip_tags($this->upload->display_errors())
+				]);
+				return;
+			} else {
+				$uploadData = $this->upload->data();
+				$newFile = $uploadData['file_name'];
+				$newFileUploaded = true;
+			}
+		}
+
+		// Prepare data for update
+		$data = [
+			'title'     => $title,
+			'file_path' => $newFile
+		];
+		
+		// Update the record
+		$updated = $this->model->updateData('tbl_journals', $data, ['id' => $id]);
+
+		if ($updated) {
+			// If new file was uploaded, delete the old one
+			if ($newFileUploaded && $newFile !== $currentFile && file_exists('./uploads/journal_pdfs/' . $currentFile)) {
+				unlink('./uploads/journal_pdfs/' . $currentFile);
+			}
+
+			echo json_encode([
+				'status' => 'success',
+				'message' => 'Journal PDF updated successfully.',
+				'file_path' => base_url('uploads/journal_pdfs/' . $newFile)
+			]);
+		} else {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Failed to update journal PDF.'
+			]);
+		}
+	}
+	public function delete_journal_pdf()
+	{
+		$id = $this->input->post('id');
+		if (!$id) {
+			echo json_encode(['status' => 'error', 'message' => 'Invalid Blog ID.']);
+			return;
+		}
+		// Update blog status to "deleted" or "inactive"
+		$data = [
+			'is_delete' => '0', // Assuming 0 means deleted
+		];
+		$updated = $this->model->updateData('tbl_journals', $data, ['id' => $id]);
+
+		if ($updated) {
+			echo json_encode(['status' => 'success', 'message' => 'Journal PDF deleted successfully.']);
+		} else {
+			echo json_encode(['status' => 'error', 'message' => 'Failed to delete Journal PDF.']);
+		}
+	}
+	public function about_us()
+	{
+		$admin_session = $this->session->userdata('admin_session');
+		if (empty($admin_session)) {
+			redirect('common');
+		}else{
+			$response['about_us'] = $this->model->selectWhereData('tbl_about_us', array('is_delete' => '1'), '*', false,array('id'=>'desc'));
+			$response['about_us'] = $response['about_us'][0] ?? null; // Get the first record or null if not found	
+
+			$this->load->view('admin/about_us', $response);
+		}
+	}
+	public function update_about_us()
+	{
+		$this->load->library('form_validation');
+		$this->form_validation->set_rules('about_us', 'About Us', 'required');
+
+		if ($this->form_validation->run() == FALSE) {
+			$response['status'] = 'error';
+			$response['message'] = 'Validation failed.';
+			$response['errors'] = $this->form_validation->error_array();
+			echo json_encode($response);
+			// Handle error or redirect
+		} else {
+			$about_us_id = $this->input->post('about_us_id');
+			$content = trim($this->input->post('about_us'));
+			$exists = $this->model->CountWhereRecord(
+				'tbl_about_us',
+				['about_us' => strtolower($content), 'is_delete' => '1']
+			);
+			if ($exists >0) {
+				$this->model->updateData('tbl_about_us', ['about_us' => $content], ['id' => $about_us_id]);
+				$response['status'] = 'success';
+				$response['message'] = 'About Us updated successfully.';
+				echo json_encode($response);
+			}else{
+				$this->model->insertData('tbl_about_us', ['about_us' => $content]);
+				$response['status'] = 'success';
+				$response['message'] = 'About Us added successfully.';
+				echo json_encode($response);
+			}			
+		}
+	}
+	public function objectives(){
+		$admin_session = $this->session->userdata('admin_session');
+		if (empty($admin_session)) {
+			redirect('common');
+		}else{
+			$response['objectives'] = $this->model->selectWhereData('tbl_objectives', array('is_delete' => '1'), '*', false,array('id'=>'desc'));
+			$response['objectives'] = $response['objectives'][0] ?? null; // Get the first record or null if not found	
+			$this->load->view('admin/objectives', $response);
+		}
+	}
+	public function update_objective()
+	{
+		$this->load->library('form_validation');
+		$this->form_validation->set_rules('objectives', 'Objectives', 'required');
+
+		if ($this->form_validation->run() == FALSE) {
+			$response['status'] = 'error';
+			$response['message'] = 'Validation failed.';
+			$response['errors'] = $this->form_validation->error_array();
+			echo json_encode($response);
+			// Handle error or redirect
+		} else {
+			$objective_id = $this->input->post('objective_id');
+			$objectives = trim($this->input->post('objectives'));
+			$exists = $this->model->CountWhereRecord(
+				'tbl_objectives',
+				['objectives' => strtolower($objectives), 'is_delete' => '1']
+			);
+			if ($exists >0) {
+				$this->model->updateData('tbl_objectives', ['objectives' => $objectives], ['id' => $objectives_id]);
+				$response['status'] = 'success';
+				$response['message'] = 'Objectives updated successfully.';
+				echo json_encode($response);
+			}else{
+				$this->model->insertData('tbl_objectives', ['objectives' => $objectives]);
+				$response['status'] = 'success';
+				$response['message'] = 'Objectives added successfully.';
+				echo json_encode($response);
+			}			
 		}
 	}
 

@@ -1,14 +1,14 @@
-$('#bannerForm').on('submit', function (e) {
+$('#JournalPdfForm').on('submit', function (e) {
     e.preventDefault();
 
     // Clear previous error messages
     $('.error-text').text('');
 
-    var form = $('#bannerForm')[0];
+    var form = $('#JournalPdfForm')[0];
     var formData = new FormData(form);
 
     $.ajax({
-        url: frontend + controllerName + "/save_banners",
+        url: frontend + controllerName + "/save_journal_pdf",
         type: 'POST',
         data: formData,
         dataType: 'json',
@@ -16,7 +16,7 @@ $('#bannerForm').on('submit', function (e) {
         contentType: false,
         success: function (response) {
             if (response.status === 'success') {
-                $('#BannerTable').DataTable().ajax.reload(null, false); // Reload without resetting pagination
+                $('#JournalPDFsTable').DataTable().ajax.reload(null, false); // Reload without resetting pagination
                 Swal.fire({
                     icon: 'success',
                     title: 'Success',
@@ -26,7 +26,7 @@ $('#bannerForm').on('submit', function (e) {
                     confirmButtonColor: '#3085d6',
                     confirmButtonText: 'OK'
                 });
-                $('#bannerForm')[0].reset();
+                $('#JournalPdfForm')[0].reset();
             } else if (response.status === 'error') {
                 // Show validation errors under each input
                 if (response.errors) {
@@ -56,15 +56,15 @@ $('#bannerForm').on('submit', function (e) {
     });
 });
 $(document).ready(function () {
-    if ($.fn.DataTable.isDataTable('#BannerTable')) {
-        $('#BannerTable').DataTable().clear().destroy();
+    if ($.fn.DataTable.isDataTable('#JournalPDFsTable')) {
+        $('#JournalPDFsTable').DataTable().clear().destroy();
     }
     
-    const table = $('#BannerTable').DataTable({
+    const table = $('#JournalPDFsTable').DataTable({
         processing: true,
         serverSide: false,
         ajax: {
-            url: frontend + controllerName + '/banners_data_on_datatable',
+            url: frontend + controllerName + '/journal_pdf_data_on_datatable',
             type: 'POST',
 
         },
@@ -74,9 +74,13 @@ $(document).ready(function () {
             // remove or replace the invalid blogs column
           
             {
-                data: 'banners',
+                data: 'file_path',
                 render: function (data) {
-                    return '<img src="' + frontend + 'uploads/banners/' + data + '" alt="Banners" width="50" height="50" />';
+                    if (data) {
+                        return '<a href="' + frontend + 'uploads/journal_pdfs/' + data + '" target="_blank">View PDF</a>';
+                    } else {
+                        return 'No file';
+                    }
                 }
             },
             {
@@ -101,101 +105,108 @@ $(document).ready(function () {
     });
 
     // View button handler
-    $('#BannerTable').on('click', '.view-btn', function () {
-        const id = $(this).data('id'); // Get the blog ID from the button's data-id attribute
+    $('#JournalPDFsTable').on('click', '.view-btn', function () {
+        const id = $(this).data('id'); // Get the journal PDF ID
     
-        // Make the AJAX request to fetch blog details
+        // AJAX call to get the journal PDF data by ID
         $.ajax({
-            url: frontend + controllerName + '/banners_data_on_id', // Corrected controller path
+            url: frontend + controllerName + '/journal_pdf_data_on_id',
             type: 'POST',
-            data: {
-                id: id // Send the blog ID to fetch the details
-            },
+            data: { id: id },
             dataType: 'json',
             success: function(response) {
                 if (response.status === 'success') {
-                    // If the response is successful, populate the modal with the blog data
-                    const BannerData = response.data;
-                    $('#view_title').text(BannerData.title); // Set the title
-                    if (BannerData.banners) {
-                        $('#view_banners').attr('src', frontend + 'uploads/banners/' + BannerData.banners);
-                    } else {
-                        // Fallback image if no featured image is found
-                        $('#view_banners').attr('src', '/path/to/default-image.jpg');
-                    }    
-                    $('#view_status').text(BannerData.status); // Set the status
+                    const data = response.data;
     
-                    // Show the modal with the blog details
-                    $('#viewBannersModal').modal('show');
+                    // Set title
+                    $('#view_title').text(data.title);
+    
+                    // Set file path link
+                    if (data.file_path) {
+                        const pdfUrl = frontend + 'uploads/journal_pdfs/' + data.file_path;
+                        $('#view_pdfs_link')
+                            .attr('href', pdfUrl)
+                            .text('View PDF')
+                            .show();
+                    } else {
+                        $('#view_pdfs_link')
+                            .attr('href', '#')
+                            .text('No PDF Available')
+                            .hide(); // Hide if no file
+                    }
+    
+                    // Show modal
+                    $('#viewJournalPdfsModal').modal('show');
                 } else {
-                    // Handle the error if the status is not success
-                    alert('Failed to load blog details.');
+                    alert('Failed to load journal PDF details.');
                 }
             },
             error: function(xhr, status, error) {
-                // Handle AJAX error
-                console.error('AJAX Error: ' + status + ' - ' + error);
-                alert('An error occurred while fetching the blog details.');
+                console.error('AJAX Error:', status, error);
+                alert('An error occurred while fetching the journal PDF details.');
             }
         });
     });
     
-
    // Edit button handler
-$('#BannerTable').on('click', '.edit-btn', function () {
-    const id = $(this).data('id'); // Get the blog ID from the button's data-id attribute
+   $('#JournalPDFsTable').on('click', '.edit-btn', function () {
+    const id = $(this).data('id'); // Get the journal PDF ID
 
-    // Make the AJAX request to fetch blog details
+    // Make AJAX request to fetch journal PDF details
     $.ajax({
-        url: frontend + controllerName + '/banners_data_on_id', // Corrected controller path
+        url: frontend + controllerName + '/journal_pdf_data_on_id',
         type: 'POST',
-        data: {
-            id: id // Send the blog ID to fetch the details
-        },
+        data: { id: id },
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success') {
-                // If the response is successful, populate the modal with the blog data
-                const BannerData = response.data;
+                const pdfData = response.data;
 
-                // Populate modal fields
-                $('#edit_banner_id').val(BannerData.id);
-                $('#edit_title').val(BannerData.title);
-                $('#edit_current_banner').val(BannerData.banners); // Set the current banner name for reference
-                       // Check if the blog has a featured image and set it
-                if (BannerData.banners) {
-                    $('#current_banner').attr('src', frontend + 'uploads/banners/' + BannerData.banners).show();
+                // Populate the modal form fields
+                $('#edit_pdf_id').val(pdfData.id);
+                $('#edit_title').val(pdfData.title);
+                $('#edit_current_pdf').val(pdfData.file_path); // hidden input to store existing file name
+
+                // Show preview or download link for current PDF
+                if (pdfData.file_path) {
+                    const fileUrl = frontend + 'uploads/journal_pdfs/' + pdfData.file_path;
+                    $('#current_pdf_link')
+                        .attr('href', fileUrl)
+                        .text('View Current PDF')
+                        .show();
                 } else {
-                    $('#current_banner').hide();  // Hide the image section if there's no image
-                }                // Show the modal with the blog details
-                $('#editBannersModal').modal('show');
+                    $('#current_pdf_link')
+                        .hide();
+                }
+
+                // Show the modal
+                $('#editJournalPdfsModal').modal('show');
             } else {
-                // Handle the error if the status is not success
-                alert('Failed to load blog details.');
+                alert('Failed to load journal PDF details.');
             }
         },
         error: function(xhr, status, error) {
-            // Handle AJAX error
-            console.error('AJAX Error: ' + status + ' - ' + error);
-            alert('An error occurred while fetching the blog details.');
+            console.error('AJAX Error:', status, error);
+            alert('An error occurred while fetching the journal PDF details.');
         }
     });
 });
+
 
     
 
     // Delete button handler (Soft Delete)
 // Delete button handler (Soft Delete)
-$('#BannerTable').on('click', '.delete-btn', function () {
+$('#JournalPDFsTable').on('click', '.delete-btn', function () {
     const id = $(this).data('id'); // Get the blog ID from the button's data-id attribute
 
     // Show the delete confirmation modal
-    $('#deleteBannerModal').modal('show');
+    $('#deleteJournalPdfsModal').modal('show');
 
     // Handle the confirm delete button click
     $('#confirmDeleteBtn').off('click').on('click', function () {
         $.ajax({
-            url: frontend + controllerName + '/delete_banners', // Ensure correct controller path
+            url: frontend + controllerName + '/delete_journal_pdf', // Ensure correct controller path
             type: 'POST',
             data: { id: id },
             dataType: 'json',
@@ -204,7 +215,7 @@ $('#BannerTable').on('click', '.delete-btn', function () {
                     // Display success message using SweetAlert
                     Swal.fire({
                         icon: 'success',
-                        title: 'Banner Deleted',
+                        title: 'Journal PDFs Deleted',
                         text: response.message,
                         timer: 2000, // Auto-close after 2 seconds (2000 ms)
                         confirmButtonColor: '#3085d6',
@@ -219,12 +230,12 @@ $('#BannerTable').on('click', '.delete-btn', function () {
                 }
 
                 // Close the modal after the action is complete
-                $('#deleteBannerModal').modal('hide');
+                $('#deleteJournalPdfsModal').modal('hide');
             },
             error: function () {
                 alert('Error while soft deleting the blog.');
                 // Close the modal after the error
-                $('#deleteBannerModal').modal('hide');
+                $('#deleteJournalPdfsModal').modal('hide');
             }
         });
     });
@@ -232,12 +243,12 @@ $('#BannerTable').on('click', '.delete-btn', function () {
 
 
 });
-$('#editBannerForm').on('submit', function (e) {
+$('#editpdfsForm').on('submit', function (e) {
     e.preventDefault();
 
     let formData = new FormData(this); // Collect the form data, including the file
     $.ajax({
-        url: frontend + controllerName + '/update_banners', // Adjust this URL to your controller method
+        url: frontend + controllerName + '/update_journal_pdf', // Adjust this URL to your controller method
         type: 'POST',
         data: formData,
         contentType: false,
@@ -245,15 +256,15 @@ $('#editBannerForm').on('submit', function (e) {
         dataType: 'json',
         beforeSend: function () {
             // Clear previous errors
-            $('#editBannerForm small.text-danger').text('');
+            $('#editpdfsForm small.text-danger').text('');
         },
         success: function (response) {
             if (response.status === 'success') {
-                $('#editBannersModal').modal('hide');
-                $('#editBannerForm')[0].reset();
+                $('#editJournalPdfsModal').modal('hide');
+                $('#editpdfsForm')[0].reset();
                 $('#current_featured_image').hide();
                 // Refresh the table if needed
-                $('#BannerTable').DataTable().ajax.reload(null, false); // Reload without resetting pagination
+                $('#JournalPDFsTable').DataTable().ajax.reload(null, false); // Reload without resetting pagination
                 Swal.fire({
                     icon: 'success',
                     title: 'Success',

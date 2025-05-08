@@ -302,6 +302,7 @@ class Member extends CI_Controller {
 		];
 	
 		$insert = $this->model->insertData('tbl_users', $insertData);
+
 		if ($insert) {
 			echo json_encode([
 				'status' => 'success',
